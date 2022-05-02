@@ -1,12 +1,7 @@
 use serde::Deserialize;
 use reqwest::{StatusCode,Error, header, Client};
 use reqwest::header::USER_AGENT;
-
-#[derive(Deserialize, Debug)]
-struct User {
-    login: String,
-    id: u32,
-}
+use serde_json;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -19,7 +14,7 @@ async fn main() -> Result<(), Error> {
 
     let response =client
         .get(request_url)
-        .header(USER_AGENT, "anteroserrano99")
+        .header(USER_AGENT, "My rust app")
         .send()
         .await?;
 
@@ -29,10 +24,9 @@ async fn main() -> Result<(), Error> {
         _ => println!("Not Works")
     }
 
-    println!("{}",response.status());
+    let json = response.text().await?;
 
+    println!("{}", json);
 
-    let users: Vec<User> = response.json().await?;
-    println!("{:?}", users);
     Ok(())
 }
