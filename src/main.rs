@@ -3,30 +3,29 @@ use reqwest::{StatusCode,Error, header, Client};
 use reqwest::header::USER_AGENT;
 use serde_json;
 
+#[derive(Deserialize, Debug)]
+struct Repository {
+    name: String,
+    html_url: String,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let client = reqwest::Client::new();
 
-    let request_url = format!("https://api.github.com/repos/{owner}/{repo}/stargazers",
-                              owner = "rust-lang-nursery",
-                              repo = "rust-cookbook");
+    let request_url = format!("https://api.github.com/users/{user}/repos",
+                              user = "anteroserrano99");
     println!("{}", request_url);
 
     let response =client
         .get(request_url)
-        .header(USER_AGENT, "My rust app")
+        .header(USER_AGENT, "Mirepoix")
         .send()
         .await?;
 
 
-    match response.status() {
-        StatusCode::OK => println!("Works"),
-        _ => println!("Not Works")
-    }
-
-    let json = response.text().await?;
-
-    println!("{}", json);
+    let repositories: Vec<Repository> = response.json().await?;
+    println!("{:?}", repositories);
 
     Ok(())
 }
