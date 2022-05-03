@@ -1,7 +1,6 @@
 use serde::Deserialize;
-use reqwest::{StatusCode,Error, header, Client};
+use reqwest::{Error};
 use reqwest::header::USER_AGENT;
-use serde_json;
 
 #[derive(Deserialize, Debug)]
 struct Repository {
@@ -10,12 +9,11 @@ struct Repository {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn get_repositories() -> Result<Vec<Repository>, Error> {
     let client = reqwest::Client::new();
 
     let request_url = format!("https://api.github.com/users/{user}/repos",
                               user = "anteroserrano99");
-    println!("{}", request_url);
 
     let response =client
         .get(request_url)
@@ -25,7 +23,19 @@ async fn main() -> Result<(), Error> {
 
 
     let repositories: Vec<Repository> = response.json().await?;
-    println!("{:?}", repositories);
 
-    Ok(())
+    Ok(repositories)
+}
+
+//TODO add error handling
+fn main(){
+
+    let repositories = get_repositories().unwrap();
+
+    for repository in repositories.iter() {
+        println!("The name of the repository is: {}",repository.name);
+        println!("The repository url is: {}",repository.html_url);
+    }
+
+
 }
