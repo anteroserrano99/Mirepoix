@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::Write;
+use std::io::{stdin, Write};
 use std::env;
 use serde::Deserialize;
 use reqwest::{Error};
@@ -10,14 +10,32 @@ use std::process::Command;
 struct Repository {
     html_url: String
 }
-const directory_name:&str = "anteroserrano99";
+
+
+fn main(){
+    let user: String = get_user();
+    let mut username = user;
+    println!("Introduced user is: {}", username);
+
+    let repositories = get_repositories(&username).unwrap();
+
+
+
+    create_directory(&username);
+
+    for repository in repositories.iter() {
+        println!("The repository url is: {}",repository.html_url);
+        git_clone(repository.html_url.as_str(), &username);
+    }
+}
+
 
 #[tokio::main]
-async fn get_repositories() -> Result<Vec<Repository>, Error> {
+async fn get_repositories(username: &str) -> Result<Vec<Repository>, Error> {
     let client = reqwest::Client::new();
 
     let request_url = format!("https://api.github.com/users/{user}/repos",
-                              user = "anteroserrano99");
+                              user = username);
 
     let response =client
         .get(request_url)
@@ -31,47 +49,45 @@ async fn get_repositories() -> Result<Vec<Repository>, Error> {
     Ok(repositories)
 }
 
-fn main(){
+fn get_user()-> String {
 
-    let repositories = get_repositories().unwrap();
+    println!("Insert your gitHub username: ");
 
-    let os = env::consts::OS;
-
-    create_directory(os);
-
-    for repository in repositories.iter() {
-        println!("The repository url is: {}",repository.html_url);
-        git_clone(repository.html_url.as_str());
-    }
+    let mut input_string = String::new();
+    stdin().read_line(&mut input_string)
+        .ok()
+        .expect("Failed to read line");
 
 
+    str::replace(input_string.as_str(),"\n", "")
 }
 
 
 
+fn create_directory(username:&str) -> std::io::Result<()> {
 
-fn create_directory(os:&str) -> std::io::Result<()> {
+    let os = env::consts::OS;
 
     match os {
-        "windows" => fs::create_dir_all(format!("{}{}","C:\\",directory_name))?,
-        _ => fs::create_dir_all(format!("{}{}","/",directory_name))?
+        "windows" => fs::create_dir_all(format!("{}{}","C:\\",username))?,
+        _ => fs::create_dir_all(format!("{}{}","/",username))?
     }
 
     Ok(())
 }
 
-fn git_clone(repository:&str) {
+fn git_clone(repository:&str, username:&str) {
 
 
     let output = if cfg!(target_os = "windows") {
         Command::new("cmd")
-            .args(["/C", format!("git -C C:\\{} clone {}.git", directory_name, repository).as_str()])
+            .args(["/C", format!("git -C C:\\{} clone {}.git", username, repository).as_str()])
             .output()
             .expect("failed to execute process")
     } else {
         Command::new("sh")
             .arg("-c")
-            .arg(format!("git -C /{} clone {}.git", directory_name, repository).as_str())
+            .arg(format!("git -C /{} clone {}.git", username, repository).as_str())
             .output()
             .expect("failed to execute process")
     };
